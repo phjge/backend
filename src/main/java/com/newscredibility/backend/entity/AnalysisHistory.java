@@ -39,4 +39,7 @@ public class AnalysisHistory {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
+
+    @Column(name = "input_text", length = 200)
+    private String inputText;
 }

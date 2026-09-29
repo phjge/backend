@@ -50,10 +50,13 @@ public class CacheService {
     }
 
     // 이력 저장
-    public void saveHistory(String textHash, AnalysisResponseDTO result, User user) {
+    public void saveHistory(String textHash, String text, AnalysisResponseDTO result, User user) {
+        String preview = text.length() > 200 ? text.substring(0, 200) : text;
+
         AnalysisHistory history = AnalysisHistory.builder()
                 .user(user)
                 .textHash(textHash)
+                .inputText(preview)
                 .finalScore(result.getFinal_score())
                 .label(result.getLabel())
                 .pressName(result.getPress_name())

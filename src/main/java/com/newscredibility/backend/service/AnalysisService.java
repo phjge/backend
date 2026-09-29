@@ -23,24 +23,21 @@ public class AnalysisService {
 
     public AnalysisResponseDTO analyze(AnalysisRequestDTO request) {
 
-        String textHash = hashText(request.getText());
+        String text = request.getText();
+        String textHash = hashText(text);
 
-        // 1. 캐시 확인
-        Optional<AnalysisResponseDTO> cached = cacheService.findCache(textHash);
-        if (cached.isPresent()) {
-            return cached.get();
-        }
+        // 1. 캐시 확인 → 없으면 FastAPI 호출 후 캐시 저장
+        AnalysisResponseDTO result = cacheService.findCache(textHash)
+                .orElseGet(() -> {
+                    AnalysisResponseDTO fresh = fastApiClient.requestAnalysis(text);
+                    cacheService.saveCache(textHash, fresh);
+                    return fresh;
+                });
 
-        // 2. FastAPI 호출
-        AnalysisResponseDTO result = fastApiClient.requestAnalysis(request.getText());
-
-        // 3. 캐시 저장
-        cacheService.saveCache(textHash, result);
-
-        // 4. 로그인한 사용자 이력 저장
+        // 2. 캐시 여부와 상관없이 로그인한 사용자 이력 저장
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         userRepository.findByEmail(email).ifPresent(user ->
-                cacheService.saveHistory(textHash, result, user)
+                cacheService.saveHistory(textHash, text, result, user)
         );
 
         return result;
